@@ -1,0 +1,32 @@
+//@version=5
+indicator(title = "Kodlama", shorttitle = "Kodlama V1.0", overlay = true )
+
+//Genel Ayarlar
+//src = input.source(defval = close, title = "Kaynak",group = "Genel Ayarlar")
+
+
+//degisken = kosul ? dogru ise : yanlış ise
+
+//1. Çizgi
+cizgiGrubu = "1. Çizgi"
+srcCizgi = input.source(defval = high, title = "Çizgi Kaynak",group = cizgiGrubu)
+cizgiGoster = input.bool(defval = true,title = "Cizgi Gösterilsin mi?",group = cizgiGrubu)
+cizgiBoyutu = input.int(defval = 2,minval = 1,maxval = 4, title = "Çizgi Kalınlığı", group = cizgiGrubu)
+cigiRengi = input.color(defval = color.new(color.yellow,34),title="Çizgi Rengi", group = cizgiGrubu)
+cizgi1 = plot(srcCizgi and cizgiGoster ? srcCizgi : na,color = cigiRengi,linewidth = cizgiBoyutu ,title = "1. Çizgi",display = display.all,style = plot.style_line,trackprice = false)
+
+
+//2. Çizgi
+cizgiGrubu2 = "2. Çizgi"
+srcCizgi2 = input.source(defval = low, title = "Çizgi Kaynak",group = cizgiGrubu2)
+cizgiGoster2 = input.bool(defval = true,title = "Cizgi Gösterilsin mi?",group = cizgiGrubu2)
+cizgiBoyutu2 = input.int(defval = 2,minval = 1,maxval = 4, title = "Çizgi Kalınlığı", group = cizgiGrubu2)
+cigiRengi2 = input.color(defval = color.new(color.red,34),title="Çizgi Rengi", group = cizgiGrubu2)
+cizgi2 = plot(srcCizgi2 and cizgiGoster2 ? srcCizgi2 : na,color = cigiRengi2,linewidth = cizgiBoyutu2 ,title = "1. Çizgi",display = display.all,style = plot.style_line,trackprice = false)
+
+
+fill(cizgi1,cizgi2, color = color.new(color.teal,67) )
+
+
+
+//BURADA BİTTİ
