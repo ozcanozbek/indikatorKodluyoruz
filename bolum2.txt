@@ -1,0 +1,25 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ozcanozbek
+
+//@version=5
+indicator(title = "Hareketli Ortalama Alıştırmaları", shorttitle = "EMA_Calismasi V1.2", overlay = true)
+mumKaynagi = input(close, title="Kaynak")
+
+//Hızlı Ema 
+uzunlukHizli = input.int(20, minval=1, title="Hızlı EMA")
+sonucHizli = ta.ema(mumKaynagi, uzunlukHizli)
+cizimHizli =  plot(sonucHizli, color=color.yellow, title="Hızlı Ema",linewidth=2)
+
+//Yavaş Ema 
+uzunlukYavas = input.int(100, minval=1, title="Yavaş EMA")
+sonucYavas = ta.ema(mumKaynagi, uzunlukYavas)
+cizimYavas = plot(sonucYavas, color=color.white, title="Yavaş Ema",linewidth=3)
+
+
+boya = sonucHizli <= sonucYavas ? color.red : color.green
+
+fill(cizimHizli, cizimYavas, color = sonucHizli > sonucYavas ? color.new(color.green, 50) : color.new(color.red, 50) )
+barcolor(boya)
+plotcandle(open, high, low, close, title='Title', color = boya, wickcolor=boya)
+
+//BURADA BİTTİ
