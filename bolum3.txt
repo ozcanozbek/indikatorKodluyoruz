@@ -1,0 +1,65 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ozcanozbek
+
+//@version=5
+indicator(title = "Hareketli Ortalama Alıştırmaları", shorttitle = "EMA_Calismasi V1.2", overlay = true)
+mumKaynagi = input(close, title="Kaynak")
+
+//Hızlı Ema 
+uzunlukHizli = input.int(20, minval=1, title="Hızlı EMA")
+sonucHizli = ta.ema(mumKaynagi, uzunlukHizli)
+cizimHizli =  plot(sonucHizli, color=color.yellow, title="Hızlı Ema",linewidth=2)
+
+//Yavaş Ema 
+uzunlukYavas = input.int(100, minval=1, title="Yavaş EMA")
+sonucYavas = ta.ema(mumKaynagi, uzunlukYavas)
+cizimYavas = plot(sonucYavas, color=color.white, title="Yavaş Ema",linewidth=3)
+
+
+boya = sonucHizli <= sonucYavas ? color.red : color.green
+boyaYon = open >= close ? color.red : color.green
+
+fill(cizimHizli, cizimYavas, color = sonucHizli > sonucYavas ? color.new(color.green, 50) : color.new(color.red, 50) )
+//barcolor(boya)
+plotcandle(open, high, low, close, title='Title', color = boya, wickcolor=boya,bordercolor=boyaYon)
+
+sezonAcik = sonucHizli > sonucYavas
+
+
+sezonAcildi = sezonAcik and sezonAcik[1]==false
+sezonKapandi = sezonAcik ==false and sezonAcik[1]
+
+
+if sezonAcildi
+    l= label.new(bar_index, na)
+    label.set_size(l,size.large)
+    label.set_text(l, str.tostring(close, '#0.00'))
+    label.set_textcolor(l,color.white)
+    label.set_color(l, #056656)
+    label.set_yloc(l, yloc.belowbar)
+    label.set_style(l, label.style_label_up)
+    //label.delete(l[1])
+
+if sezonKapandi
+    l= label.new(bar_index, na)
+    label.set_size(l,size.large)
+    label.set_text(l, str.tostring(close, '#0.00'))
+    label.set_textcolor(l,color.white)
+    label.set_color(l, #4b2003)
+    label.set_yloc(l, yloc.abovebar)
+    label.set_style(l, label.style_label_down)
+    //label.delete(l[1])
+
+if barstate.islast 
+    my_label = label.new(bar_index, open)
+    label.set_size(my_label,size.normal)
+    label.set_text(my_label, str.tostring(close, '#0.00'))
+    label.set_xloc(my_label, time, xloc.bar_time)
+    label.set_yloc(my_label, yloc.price)
+    label.set_style(my_label,label.style_label_upper_left)
+    label.set_textcolor(my_label ,color.white)
+    label.set_color(my_label, boyaYon)
+    label.delete(my_label[1])
+
+
+//BURADA BİTTİ
