@@ -1,0 +1,139 @@
+//@version=6
+indicator("Double Linear Regression Channel", shorttitle="Double LinReg", overlay=true, max_bars_back = 5000)
+
+// === 1. LINEAR REGRESSION CHANNEL AYARLARI ===
+lengthInput1 = input.int(100, title="1. Kanal Uzunluğu", minval=1, maxval=5000, group="1. Kanal Ayarları")
+sourceInput1 = input.source(close, title="1. Kanal Kaynağı", group="1. Kanal Ayarları")
+useUpperDevInput1 = input.bool(true, title="Üst Sapma Kullan", inline="Upper Deviation 1", group="1. Kanal Ayarları")
+upperMultInput1 = input.float(2.0, title="", inline="Upper Deviation 1", group="1. Kanal Ayarları")
+useLowerDevInput1 = input.bool(true, title="Alt Sapma Kullan", inline="Lower Deviation 1", group="1. Kanal Ayarları")
+lowerMultInput1 = input.float(2.0, title="", inline="Lower Deviation 1", group="1. Kanal Ayarları")
+colorUpper1 = input.color(color.new(color.blue, 85), "1. Üst Kanal Rengi", group="1. Kanal Ayarları")
+colorLower1 = input.color(color.new(color.red, 85), "1. Alt Kanal Rengi", group="1. Kanal Ayarları")
+lineColor1 = input.color(color.blue, "1. Çizgi Rengi", group="1. Kanal Ayarları")
+lineWidth1 = input.int(1, "1. Çizgi Kalınlığı", minval=1, group="1. Kanal Ayarları")
+
+// === 2. LINEAR REGRESSION CHANNEL AYARLARI ===
+lengthInput2 = input.int(50, title="2. Kanal Uzunluğu", minval=1, maxval=5000, group="2. Kanal Ayarları")
+sourceInput2 = input.source(close, title="2. Kanal Kaynağı", group="2. Kanal Ayarları")
+useUpperDevInput2 = input.bool(true, title="Üst Sapma Kullan", inline="Upper Deviation 2", group="2. Kanal Ayarları")
+upperMultInput2 = input.float(2.0, title="", inline="Upper Deviation 2", group="2. Kanal Ayarları")
+useLowerDevInput2 = input.bool(true, title="Alt Sapma Kullan", inline="Lower Deviation 2", group="2. Kanal Ayarları")
+lowerMultInput2 = input.float(2.0, title="", inline="Lower Deviation 2", group="2. Kanal Ayarları")
+colorUpper2 = input.color(color.new(color.green, 85), "2. Üst Kanal Rengi", group="2. Kanal Ayarları")
+colorLower2 = input.color(color.new(color.orange, 85), "2. Alt Kanal Rengi", group="2. Kanal Ayarları")
+lineColor2 = input.color(color.green, "2. Çizgi Rengi", group="2. Kanal Ayarları")
+lineWidth2 = input.int(1, "2. Çizgi Kalınlığı", minval=1, group="2. Kanal Ayarları")
+
+// === GENEL AYARLAR ===
+extendLeftInput = input.bool(false, "Çizgileri Sola Uzat", group="Genel Ayarlar")
+extendRightInput = input.bool(true, "Çizgileri Sağa Uzat", group="Genel Ayarlar")
+extendStyle = switch
+    extendLeftInput and extendRightInput => extend.both
+    extendLeftInput => extend.left
+    extendRightInput => extend.right
+    => extend.none
+
+// === FONKSİYONLAR ===
+calcSlope(source, length) =>
+    if not barstate.islast or length <= 1
+        [float(na), float(na), float(na)]
+    else
+        sumX = 0.0
+        sumY = 0.0
+        sumXSqr = 0.0
+        sumXY = 0.0
+        for i = 0 to length - 1 by 1
+            val = source[i]
+            per = i + 1.0
+            sumX += per
+            sumY += val
+            sumXSqr += per * per
+            sumXY += val * per
+        slope = (length * sumXY - sumX * sumY) / (length * sumXSqr - sumX * sumX)
+        average = sumY / length
+        intercept = average - slope * sumX / length + slope
+        [slope, average, intercept]
+
+calcDev(source, length, slope, average, intercept) =>
+    upDev = 0.0
+    dnDev = 0.0
+    stdDevAcc = 0.0
+    periods = length - 1
+    daY = intercept + slope * periods / 2
+    val = intercept
+    for j = 0 to periods by 1
+        price = high[j] - val
+        if price > upDev
+            upDev := price
+        price := val - low[j]
+        if price > dnDev
+            dnDev := price
+        price := source[j]
+        dxt = price - average
+        dyt = val - daY
+        price -= val
+        stdDevAcc += price * price
+        val += slope
+    stdDev = math.sqrt(stdDevAcc / (periods == 0 ? 1 : periods))
+    [stdDev, upDev, dnDev]
+
+// === 1. KANAL HESAPLAMALARI ===
+[s1, a1, i1] = calcSlope(sourceInput1, lengthInput1)
+startPrice1 = i1 + s1 * (lengthInput1 - 1)
+endPrice1 = i1
+var line baseLine1 = na
+if na(baseLine1) and not na(startPrice1)
+    baseLine1 := line.new(bar_index - lengthInput1 + 1, startPrice1, bar_index, endPrice1, width=lineWidth1, extend=extendStyle, color=lineColor1)
+else
+    line.set_xy1(baseLine1, bar_index - lengthInput1 + 1, startPrice1)
+    line.set_xy2(baseLine1, bar_index, endPrice1)
+[stdDev1, upDev1, dnDev1] = calcDev(sourceInput1, lengthInput1, s1, a1, i1)
+upperStartPrice1 = startPrice1 + (useUpperDevInput1 ? upperMultInput1 * stdDev1 : upDev1)
+upperEndPrice1 = endPrice1 + (useUpperDevInput1 ? upperMultInput1 * stdDev1 : upDev1)
+lowerStartPrice1 = startPrice1 + (useLowerDevInput1 ? -lowerMultInput1 * stdDev1 : -dnDev1)
+lowerEndPrice1 = endPrice1 + (useLowerDevInput1 ? -lowerMultInput1 * stdDev1 : -dnDev1)
+var line upper1 = na
+var line lower1 = na
+if na(upper1) and not na(upperStartPrice1)
+    upper1 := line.new(bar_index - lengthInput1 + 1, upperStartPrice1, bar_index, upperEndPrice1, width=lineWidth1, extend=extendStyle, color=colorUpper1)
+else
+    line.set_xy1(upper1, bar_index - lengthInput1 + 1, upperStartPrice1)
+    line.set_xy2(upper1, bar_index, upperEndPrice1)
+if na(lower1) and not na(lowerStartPrice1)
+    lower1 := line.new(bar_index - lengthInput1 + 1, lowerStartPrice1, bar_index, lowerEndPrice1, width=lineWidth1, extend=extendStyle, color=colorLower1)
+else
+    line.set_xy1(lower1, bar_index - lengthInput1 + 1, lowerStartPrice1)
+    line.set_xy2(lower1, bar_index, lowerEndPrice1)
+linefill.new(upper1, baseLine1, color=colorUpper1)
+linefill.new(baseLine1, lower1, color=colorLower1)
+
+// === 2. KANAL HESAPLAMALARI ===
+[s2, a2, i2] = calcSlope(sourceInput2, lengthInput2)
+startPrice2 = i2 + s2 * (lengthInput2 - 1)
+endPrice2 = i2
+var line baseLine2 = na
+if na(baseLine2) and not na(startPrice2)
+    baseLine2 := line.new(bar_index - lengthInput2 + 1, startPrice2, bar_index, endPrice2, width=lineWidth2, extend=extendStyle, color=lineColor2)
+else
+    line.set_xy1(baseLine2, bar_index - lengthInput2 + 1, startPrice2)
+    line.set_xy2(baseLine2, bar_index, endPrice2)
+[stdDev2, upDev2, dnDev2] = calcDev(sourceInput2, lengthInput2, s2, a2, i2)
+upperStartPrice2 = startPrice2 + (useUpperDevInput2 ? upperMultInput2 * stdDev2 : upDev2)
+upperEndPrice2 = endPrice2 + (useUpperDevInput2 ? upperMultInput2 * stdDev2 : upDev2)
+lowerStartPrice2 = startPrice2 + (useLowerDevInput2 ? -lowerMultInput2 * stdDev2 : -dnDev2)
+lowerEndPrice2 = endPrice2 + (useLowerDevInput2 ? -lowerMultInput2 * stdDev2 : -dnDev2)
+var line upper2 = na
+var line lower2 = na
+if na(upper2) and not na(upperStartPrice2)
+    upper2 := line.new(bar_index - lengthInput2 + 1, upperStartPrice2, bar_index, upperEndPrice2, width=lineWidth2, extend=extendStyle, color=colorUpper2)
+else
+    line.set_xy1(upper2, bar_index - lengthInput2 + 1, upperStartPrice2)
+    line.set_xy2(upper2, bar_index, upperEndPrice2)
+if na(lower2) and not na(lowerStartPrice2)
+    lower2 := line.new(bar_index - lengthInput2 + 1, lowerStartPrice2, bar_index, lowerEndPrice2, width=lineWidth2, extend=extendStyle, color=colorLower2)
+else
+    line.set_xy1(lower2, bar_index - lengthInput2 + 1, lowerStartPrice2)
+    line.set_xy2(lower2, bar_index, lowerEndPrice2)
+linefill.new(upper2, baseLine2, color=colorUpper2)
+linefill.new(baseLine2, lower2, color=colorLower2)
