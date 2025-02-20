@@ -1,0 +1,41 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ozcanozbek
+
+//@version=6
+indicator("Scalper Momentum Hybrid MTF (SMH-MTF)", overlay=false)
+
+// Parametreler
+momentumPeriod = input.int(5, "Momentum Periyodu", minval=3, maxval=10)
+volatilityPeriod = input.int(10, "Volatilite Periyodu", minval=5, maxval=20)
+threshold = input.float(1.5, "Sinyal Eşiği", minval=0.5, maxval=3.0)
+trendTimeframe = input.timeframe("60", "Trend Timeframe") // 1 saatlik varsayılan
+emaPeriod = input.int(50, "Trend EMA Periyodu", minval=20, maxval=100)
+
+// 5 Dakikalık SMH Hesaplama
+priceChange = close - close[momentumPeriod]
+momentumRaw = ta.ema(priceChange, momentumPeriod)
+volumeWeight = ta.ema(volume, momentumPeriod)
+momentumWeighted = momentumRaw * volumeWeight
+atr = ta.atr(volatilityPeriod)
+smh = momentumWeighted / atr
+
+// Üst Timeframe Trend Hesaplama (60 Dakikalık)
+[emaTrend, atrTrend] = request.security(syminfo.tickerid, trendTimeframe, [ta.ema(close, emaPeriod), ta.atr(volatilityPeriod)])
+trendDirection = close > emaTrend ? 1 : close < emaTrend ? -1 : 0 // 1: Yükselen, -1: Düşen, 0: Yatay
+isLowVolatility = atrTrend < ta.sma(atrTrend, 10) // Yatay trend için volatilite kontrolü
+
+// Sinyal Üretimi (Trend Filtresiyle)
+buySignalRaw = ta.crossover(smh, threshold)
+sellSignalRaw = ta.crossunder(smh, -threshold)
+buySignal = buySignalRaw and (trendDirection >= 0) // Yükselen veya yatayda al
+sellSignal = sellSignalRaw and (trendDirection <= 0) // Düşen veya yatayda sat
+
+// Görselleştirme
+plot(smh, title="SMH", color=color.blue, linewidth=2)
+hline(threshold, "Üst Eşik", color=color.green)
+hline(-threshold, "Alt Eşik", color=color.red)
+plotshape(buySignal, title="Al Sinyali", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(sellSignal, title="Sat Sinyali", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+// Trend Durumu Göstergesi
+plot(trendDirection, title="Trend Yönü", style=plot.style_histogram, color=color.white)
