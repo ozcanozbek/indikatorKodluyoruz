@@ -1,0 +1,62 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ozcanozbek
+//@version=5
+indicator("Özelleştirilebilir RSI ile Barcolor, Üst Seviye İşareti ve MA'lar", overlay=true)
+
+// Kullanıcı Girişleri - RSI
+rsi_length = input.int(14, title="RSI Uzunluğu", minval=1, maxval=100)
+upper_level = input.float(70, title="Üst Seviye", minval=0, maxval=100)
+lower_level = input.float(30, title="Alt Seviye", minval=0, maxval=100)
+
+// Renk Seçenekleri - RSI
+upper_color = input.color(#00e676, title="Üst Seviye Üstü Renk")  // Yeşil yerine #00e676
+lower_color = input.color(#FF0000, title="Alt Seviye Altı Renk")   // Kırmızı yerine #FF0000
+middle_color = input.color(color.white, title="Orta Bölge Renk")
+
+// RSI Hesaplama
+rsi = ta.rsi(close, rsi_length)
+
+// Barcolor ile Mum Renklendirme
+bar_color = rsi > upper_level ? upper_color : rsi < lower_level ? lower_color : middle_color
+barcolor(bar_color)
+
+// Üst Seviye Geçişi için İşaret (En Altta Göster)
+upper_cross = ta.crossover(rsi, upper_level)  // RSI üst seviyeyi yukarı keserse
+plotshape(upper_cross, title="Üst Seviye Geçişi", location=location.bottom, color=upper_color, style=shape.triangleup, size=size.small)
+
+// Uyarılar (Opsiyonel)
+alertcondition(upper_cross, title="RSI Üst Seviyeyi Aştı", message="RSI {{upper_level}} seviyesini geçti!")
+alertcondition(rsi < lower_level, title="RSI Alt Seviyeye Düştü", message="RSI {{lower_level}} seviyesinin altına indi!")
+
+// Kullanıcı Girişleri - Hareketli Ortalamalar
+ma_timeframe = input.timeframe("5", title="Hareketli Ortalama Timeframe", tooltip="Ortak timeframe seçimi")
+
+// 1. Hareketli Ortalama (EMA, 20, Sarı, 1 kalınlık)
+ma1_type = input.string("EMA", title="1. MA Tipi", options=["SMA", "EMA", "WMA", "HMA"])
+ma1_length = input.int(20, title="1. MA Uzunluğu", minval=1, maxval=200)
+ma1_color = input.color(color.yellow, title="1. MA Rengi")
+ma1_width = input.int(1, title="1. MA Çizgi Kalınlığı", minval=1, maxval=5)
+
+// 2. Hareketli Ortalama (EMA, 50, Beyaz, 3 kalınlık)
+ma2_type = input.string("EMA", title="2. MA Tipi", options=["SMA", "EMA", "WMA", "HMA"])
+ma2_length = input.int(50, title="2. MA Uzunluğu", minval=1, maxval=200)
+ma2_color = input.color(color.white, title="2. MA Rengi")
+ma2_width = input.int(3, title="2. MA Çizgi Kalınlığı", minval=1, maxval=5)
+
+// Hareketli Ortalama Hesaplama (Timeframe ile)
+ma1_src = request.security(syminfo.tickerid, ma_timeframe, close)
+ma2_src = request.security(syminfo.tickerid, ma_timeframe, close)
+
+ma1 = ma1_type == "SMA" ? ta.sma(ma1_src, ma1_length) :
+      ma1_type == "EMA" ? ta.ema(ma1_src, ma1_length) :
+      ma1_type == "WMA" ? ta.wma(ma1_src, ma1_length) :
+      ta.hma(ma1_src, ma1_length)
+
+ma2 = ma2_type == "SMA" ? ta.sma(ma2_src, ma2_length) :
+      ma2_type == "EMA" ? ta.ema(ma2_src, ma2_length) :
+      ma2_type == "WMA" ? ta.wma(ma2_src, ma2_length) :
+      ta.hma(ma2_src, ma2_length)
+
+// Hareketli Ortalamaları Çizme
+plot(ma1, title="1. Hareketli Ortalama", color=ma1_color, linewidth=ma1_width)
+plot(ma2, title="2. Hareketli Ortalama", color=ma2_color, linewidth=ma2_width)
