@@ -1,0 +1,22 @@
+1)
+Bist borsasında hisse alım satım stratejileri ile 5 dakikalık mumlarda scalp veya gün için trade yapma amaçlı indikatör geliştirmek istiyorum
+
+2)
+RSI 'ın farklı kullanımlarını maddeler misin? önem sırasına göre ilk 10 kullanımı listeler misin?
+
+3)
+kullanıcının değiştirebileceği şekilde indikatör üretir misin? teşekkürler;
+1) rsi uzunluk
+2) üst seviye rakamı
+3) alt seviye rakamı
+4) üstü seviye üstü için renk belirleme (default yeşil)
+5) alt seviye altı için renk belirleme (default kırmız)
+6) alt ve üst seviye arası için renk belirleme (default beyaz)
+
+
+4)
+2 tane hareketli ortalama ekler misin? kullanıcı;
+1) her 2 hareketli ortama için ortak timeframe seçebilmeli
+2) her 2 hareketli ortamala için ayrı ayrı; hareketli ortamala tipi, uzunluk, renk, plot kalınlığı seçebilmeli
+
+---- BİTTİ ------
